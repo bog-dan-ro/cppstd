@@ -110,6 +110,7 @@ auto window = std::make_shared<Widget>(/*constructor args*/)::[this = Window]{
 Object lambdas are similar to lambdas, with the following differences:
 
  - explicit `this` type specifier in capture list i.e. `[=, this = Type]`
+ - allow object lambdas to be used as a member function pointer.
  - the object lambda block will behave as a member function, the only difference is that it can access **only** public class members.
  - introduce a new overload-able operator **::** `template <typename ThisType> auto & operator::(void (ThisType::*f)());`
 
@@ -134,8 +135,7 @@ auto &operator::(void (ThisType::*func)()) {
 ```
 
 Unsolved problems:
-
-  - there is no easy way to pass the `window` object to the lambda capture list e.g. instead to write:
+ - there is no easy way to pass the `window` object to the lambda capture list e.g. instead to write:
 
   ```c++
 auto window = std::make_shared<Widget>(/*constructor args*/);
@@ -147,8 +147,24 @@ window::[&window, this = Window]{};
   ```c++
 auto window = std::make_shared<Widget>(/*constructor args*/)::[&window, this = Window]{};
   ```
+alternatively we can have a *smarter* `operator ::` for smart_ptrs:
+```c++
+// shared_ptr operator::
+template<typename ThisType>
+auto &operator::(void (ThisType::*func)(const std::shared<ptr> &)) {
+    static_assert(std::is_same_v<T, ThisType>, "Invalid type");
+    std::invoke(func, *get(), *this);
+    return *this; // we're returning a std::shared_ptr<T> & not a ThisType&
+}
+//...
 
-  - there is no easy way to name the `children` and references them, instead to write:
+std::make_shared<Class>(/*Class contructor args*/)::[this = Class](const std::shared_ptr<Class> &self) {
+    // make use of self here
+    // ...
+};
+```
+
+ - there is no easy way to name the `children` and references them, instead of:
 
 ```c++
 auto label = std::make_shared<Label>(/*constructor args*/)::[this = Label]{
@@ -165,7 +181,7 @@ auto button = std::make_shared<Button>(/*constructor args*/)::[label, this = But
 children = { label, button };
 ```
 
-will be nice to write:
+will be nicer to have:
 
 ```c++
 children = {
@@ -180,5 +196,5 @@ children = {
             window->close()
         };
     }
-};
+}; // label scope ends here
 ```
