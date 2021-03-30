@@ -54,7 +54,7 @@ What are the problems with the previous code:
  - hard to spot errors (e.g. the `button` object is not added to the `window`'s children list).
  - `window->`, `label->` and `button->` are redundant and slow as the `->` is a custom operator which might require some CPU time, yes we can take a pointer/reference of the underlining object to save the CPU time but it will not make the code cleaner, also almost nobody is doing it.
 
-Now, let's try to rewrite the above code in a *declarative* way
+Now, let's try to rewrite the above code in a *declarative* way, something like https://en.wikipedia.org/wiki/QML#Syntax,_semantics.
 
 
 ## V1: Using designated initializers
