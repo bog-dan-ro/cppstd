@@ -101,17 +101,17 @@ public:
 ///...
 };
 
-auto window = std::make_shared<Widget>([](auto& w) {
-    w.width = 100;
-    w.height = 10;
-    w.children = {
+auto window = std::make_shared<Widget>([](auto& window) {
+    window.width = 100;
+    window.height = 10;
+    window.children = {
         std::make_shared<Label>([](auto& label) {
             label.y = 10;
             label.text = "Some label";
         }),
         std::make_shared<Button>([&](auto& button) {
             button.text = "Quit";
-            button.clicked = [window = &w]{ window->close(); };
+            button.clicked = [window = &window]{ window->close(); };
         }),
     };
 });
