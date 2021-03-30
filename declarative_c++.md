@@ -2,7 +2,7 @@
 
 ## Motivation
 With the introduction of designated initializers, C++ seemed quite close to be used also in a declarative way,sadly, there are a few things missing.
-Let's take an example code for better understanding:
+[QML](https://en.wikipedia.org/wiki/QML#Syntax,_semantics) is one of the best example in this area, so, let's take a widgets example code for better understanding:
 
 ```c++
 class Widget {
@@ -30,7 +30,7 @@ public:
 ## "Imperative" construction of a window
 
 ```c++
-auto window = std::make_shared<window>(/*args*/);
+auto window = std::make_shared<Widget>(/*args*/);
 window->height = 10;
 window->width = 100;
 {
@@ -54,7 +54,7 @@ What are the problems with the previous code:
  - hard to spot errors (e.g. the `button` object is not added to the `window`'s children list).
  - `window->`, `label->` and `button->` are redundant and slow as the `->` is a custom operator which might require some CPU time, yes we can take a pointer/reference of the underlining object to save the CPU time but it will not make the code cleaner, also almost nobody is doing it.
 
-Now, let's try to rewrite the above code in a *declarative* way, something like https://en.wikipedia.org/wiki/QML#Syntax,_semantics.
+Now, let's try to rewrite the above code in a *declarative* way, similar to https://en.wikipedia.org/wiki/QML#Syntax,_semantics.
 
 
 ## V1: Using designated initializers
@@ -89,9 +89,37 @@ Unsolved problems:
 
 
 ## V2: using object lambdas
-
+### vanilla C++
 ```c++
-auto window = std::make_shared<Widget>(/*constructor args*/)::[this = Window]{
+/// add a new constructor to Widget
+class Widget {
+public:
+    template<class F> requires std::invocable<F, Widget&>
+    explicit Widget(const F& setup) {
+        setup(*this);
+    }
+///...
+};
+
+auto window = std::make_shared<Widget>([](auto& w) {
+    w.width = 100;
+    w.height = 10;
+    w.children = {
+        std::make_shared<Label>([](auto& label) {
+            label.y = 10;
+            label.text = "Some label";
+        }),
+        std::make_shared<Button>([&](auto& button) {
+            button.text = "Quit";
+            button.clicked = [window = &w]{ window->close(); };
+        }),
+    };
+});
+```
+
+### using *object lambdas* proposal
+```c++
+auto window = std::make_shared<Widget>(/*constructor args*/)::[this = Widget]{
     width = 100;
     height = 10;
     children = {
@@ -106,6 +134,7 @@ auto window = std::make_shared<Widget>(/*constructor args*/)::[this = Window]{
     };
 };
 ```
+As you can see bot are quite similar, the main difference is that uusing **object lambdas** you don't need to specify the methods object as `this` already specifies it, which makes the code cleaner and closer to declarative languages.
 
 Object lambdas are similar to lambdas, with the following differences:
 
@@ -139,13 +168,13 @@ Unsolved problems:
 
   ```c++
 auto window = std::make_shared<Widget>(/*constructor args*/);
-window::[&window, this = Window]{};
+window::[&window, this = Widget]{};
   ```
 
   will be nicer to have:
 
   ```c++
-auto window = std::make_shared<Widget>(/*constructor args*/)::[&window, this = Window]{};
+auto window = std::make_shared<Widget>(/*constructor args*/)::[&window, this = Widget]{};
   ```
 alternatively we can have a *smarter* `operator ::` for smart_ptrs:
 ```c++
