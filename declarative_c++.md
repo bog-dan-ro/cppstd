@@ -134,7 +134,7 @@ auto window = std::make_shared<Widget>(/*constructor args*/)::[this = Widget]{
     };
 };
 ```
-As you can see bot are quite similar, the main difference is that uusing **object lambdas** you don't need to specify the methods object as `this` already specifies it, which makes the code cleaner and closer to declarative languages.
+As you can see bot are quite similar, the main difference is that using **object lambdas** you don't need to specify the methods object as `this` already specifies it, which makes the code cleaner and closer to declarative languages.
 
 Object lambdas are similar to lambdas, with the following differences:
 
